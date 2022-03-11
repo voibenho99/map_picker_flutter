@@ -7,7 +7,7 @@ export 'map_picker.dart';
 class MapPickerTemplate {
   /// # This feature is very useful in desktop or web, how the screen is bigger,
   /// the picker can be just a dialog, then it is done, done just to use.
-  static Future<MapPickerAddress> dialogAddressPicker({
+  static Future<MapPickerAddress?> dialogAddressPicker({
     Widget Function(Function(String address) search)? searchBuilder,
     Widget Function(String address, Function done)? addressBuilder,
     double aspectRatio = 2,

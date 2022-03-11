@@ -1,15 +1,15 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:latlng/latlng.dart';
 import 'package:map/map.dart';
 import 'package:dio/dio.dart';
-import 'mpicker_address.dart';
-import 'mpicker_theme.dart';
+import 'map_picker_address.dart';
+import 'map_picker_theme.dart';
 import 'dart:core' as c;
 import 'dart:core';
 
-class MPickerController with _Base {
+class MapPickerController with _Base {
   /// # Urls to get geocode infos
   static const _URL_ADDRESS =
       'https://maps.googleapis.com/maps/api/geocode/json?address=[ADDRESS]';
@@ -17,23 +17,23 @@ class MPickerController with _Base {
       'https://maps.googleapis.com/maps/api/geocode/json?latlng=[LAT],[LON]';
 
   final _progress = BehaviorSubject<bool>.seeded(false);
-  final _address = BehaviorSubject<MPAddress?>();
+  final _address = BehaviorSubject<MapPickerAddress?>();
   final MapController ctMap;
-  final MPickerTheme theme;
+  final MapPickerTheme theme;
   final String key;
 
   final searchControl = TextEditingController();
 
-  Stream<MPAddress?> get outStreamAddress => _address.stream;
+  Stream<MapPickerAddress?> get outStreamAddress => _address.stream;
   Stream<bool> get outStreamProgress => _progress.stream;
   double _scaleStart = 1.0;
   c.bool _hasError = true;
   Offset? _dragStart;
 
   String get currentAddress => _address.value?.formattedAddress ?? '-';
-  MPAddress? get popAddress => _hasError ? null : _address.value;
+  MapPickerAddress? get popAddress => _hasError ? null : _address.value;
 
-  MPickerController(
+  MapPickerController(
       {required this.key, required this.theme, required this.ctMap});
 
   /// Go To place with latLng
@@ -113,10 +113,18 @@ class MPickerController with _Base {
           }));
 
       _address.sink.add(
-          MPAddress(formattedAddress: _extractAddress(resp), latLng: position));
+        MapPickerAddress(
+          formattedAddress: _extractAddress(resp),
+          latLng: position,
+        ),
+      );
     } catch (msg) {
-      _address.sink.add(MPAddress(
-          formattedAddress: theme.errorToFindAddress, latLng: position));
+      _address.sink.add(
+        MapPickerAddress(
+          formattedAddress: theme.errorAddressNotFound,
+          latLng: position,
+        ),
+      );
       _hasError = true;
     }
 
@@ -133,11 +141,12 @@ class MPickerController with _Base {
           remove: {'[ADDRESS]': address.toString()}));
 
       goTo(_extractLatLng(resp));
-      _address.sink.add(MPAddress(
+      _address.sink.add(MapPickerAddress(
           formattedAddress: _extractAddress(resp),
           latLng: _extractLatLng(resp)));
     } catch (msg) {
-      _address.sink.add(MPAddress(formattedAddress: theme.errorToFindAddress));
+      _address.sink
+          .add(MapPickerAddress(formattedAddress: theme.errorAddressNotFound));
       _hasError = true;
     }
 
@@ -166,7 +175,7 @@ class MPickerController with _Base {
       return emptyAddress;
     } catch (msg) {
       _hasError = true;
-      return theme.errorToFindAddress;
+      return theme.errorAddressNotFound;
     }
   }
 

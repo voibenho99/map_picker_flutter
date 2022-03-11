@@ -1,8 +1,8 @@
 import 'package:latlng/latlng.dart';
 
-class MPAddress {
+class MapPickerAddress {
   final String formattedAddress;
   final LatLng? latLng;
 
-  MPAddress({required this.formattedAddress, this.latLng});
+  MapPickerAddress({required this.formattedAddress, this.latLng});
 }

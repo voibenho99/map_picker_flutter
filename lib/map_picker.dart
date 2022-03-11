@@ -1,19 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:map_picker_flutter/mpicker_address.dart';
-import 'mpicker_controller.dart';
+import 'package:map_picker_flutter/map_picker_address.dart';
+import 'map_picker_controller.dart';
 import 'package:map/map.dart';
-import 'mpicker_theme.dart';
+import 'map_picker_theme.dart';
 
 export 'package:latlng/latlng.dart';
-export 'mpicker_templates.dart';
-export 'mpicker_address.dart';
-export 'mpicker_theme.dart';
+export 'map_picker_template.dart';
+export 'map_picker_address.dart';
+export 'map_picker_theme.dart';
 
 import 'package:flutter/material.dart';
 
 class MapPicker extends StatelessWidget {
   /// Global theme
-  static late MPickerTheme _gTheme;
+  static late MapPickerTheme _gTheme;
 
   /// Global searchBuilder Widget
   static Widget Function(Function(String address) search)? _searchBuilder;
@@ -31,13 +31,14 @@ class MapPicker extends StatelessWidget {
   static late String _key;
 
   /// # It need be called before you use this lib passing the theme and the Google Maps API KEY
-  static init(
-      {Widget Function(Function(String address) search)? searchBuilder,
-      Widget Function(String address, Function done)? addressBuilder,
-      Widget? progressWidget,
-      Widget? marker,
-      required MPickerTheme theme,
-      required String key}) {
+  static init({
+    Widget Function(Function(String address) search)? searchBuilder,
+    Widget Function(String address, Function done)? addressBuilder,
+    Widget? progressWidget,
+    Widget? marker,
+    required MapPickerTheme theme,
+    required String key,
+  }) {
     MapPicker._addressBuilder = addressBuilder;
     MapPicker._progressWidget = progressWidget;
     MapPicker._searchBuilder = searchBuilder;
@@ -49,9 +50,9 @@ class MapPicker extends StatelessWidget {
   /// Same of global variables but here case you want change in a specific called
   final Widget Function(Function(String address) search)? searchBuilder;
   final Widget Function(String address, Function done)? addressBuilder;
-  final MPickerController controller;
+  final MapPickerController controller;
   final Widget? progressWidget;
-  final MPickerTheme theme;
+  final MapPickerTheme theme;
   final Widget? marker;
 
   factory MapPicker({
@@ -65,32 +66,36 @@ class MapPicker extends StatelessWidget {
     Widget? progressWidget,
 
     /// Custom theme, case it is null, will be used the global or default
-    MPickerTheme? theme,
+    MapPickerTheme? theme,
 
     /// Custom Marker, case it is null, will be used the global or default
     Widget? marker,
   }) =>
       MapPicker._internal(
-          progressWidget:
-              progressWidget ?? _progressWidget ?? CircularProgressIndicator(),
-          addressBuilder: addressBuilder ?? _addressBuilder,
-          searchBuilder: searchBuilder ?? _searchBuilder,
-          marker: marker ?? _markerWidget,
-          controller: MPickerController(
-              theme: theme ?? _gTheme,
-              key: _key,
-              ctMap: MapController(
-                  location: theme?.initialLocation ?? _gTheme.initialLocation,
-                  zoom: theme?.zoom ?? _gTheme.zoom)),
-          theme: theme ?? _gTheme);
+        progressWidget:
+            progressWidget ?? _progressWidget ?? CircularProgressIndicator(),
+        addressBuilder: addressBuilder ?? _addressBuilder,
+        searchBuilder: searchBuilder ?? _searchBuilder,
+        marker: marker ?? _markerWidget,
+        controller: MapPickerController(
+          theme: theme ?? _gTheme,
+          key: _key,
+          ctMap: MapController(
+            location: theme?.initialLocation ?? _gTheme.initialLocation,
+            zoom: theme?.zoom ?? _gTheme.zoom,
+          ),
+        ),
+        theme: theme ?? _gTheme,
+      );
 
-  MapPicker._internal(
-      {this.marker,
-      this.searchBuilder,
-      this.addressBuilder,
-      this.progressWidget,
-      required this.controller,
-      required this.theme});
+  MapPicker._internal({
+    this.marker,
+    this.searchBuilder,
+    this.addressBuilder,
+    this.progressWidget,
+    required this.controller,
+    required this.theme,
+  });
 
   dispose() => controller.dispose();
 
@@ -104,36 +109,41 @@ class MapPicker extends StatelessWidget {
     final width = MediaQuery.of(context).size.width;
 
     return Scaffold(
-        body: Stack(
-      children: [
-        Center(
-          child: Listener(
-            onPointerSignal: controller.onPointerSignal,
-            child: GestureDetector(
-              onScaleEnd: (details) => controller.getAddressByLatLng(),
-              onScaleUpdate: controller.onScaleUpdate,
-              onScaleStart: controller.onScaleStart,
-              onDoubleTap: controller.onDoubleTap,
-              child: Map(
-                controller: controller.ctMap,
-                builder: (context, x, y, z) {
-                  final url =
-                      'https://mt1.google.com/vt/lyrs=m@129&x=$x&y=$y&z=$z';
+      body: Stack(
+        children: [
+          Center(
+            child: Listener(
+              onPointerSignal: controller.onPointerSignal,
+              child: GestureDetector(
+                onScaleEnd: (details) => controller.getAddressByLatLng(),
+                onScaleUpdate: controller.onScaleUpdate,
+                onScaleStart: controller.onScaleStart,
+                onDoubleTap: controller.onDoubleTap,
+                child: Map(
+                  controller: controller.ctMap,
+                  builder: (context, x, y, z) {
+                    final url =
+                        'https://mt1.google.com/vt/lyrs=m@129&x=$x&y=$y&z=$z';
 
-                  return CachedNetworkImage(
-                      errorWidget: (c, w, s) => CircularProgressIndicator(),
-                      fit: BoxFit.contain,
-                      imageUrl: url);
-                },
+                    return CachedNetworkImage(
+                        errorWidget: (c, w, s) => CircularProgressIndicator(),
+                        fit: BoxFit.contain,
+                        imageUrl: url);
+                  },
+                ),
               ),
             ),
           ),
-        ),
-        Center(
+          Center(
             child: marker ??
-                Image.asset('assets/ic_location.png',
-                    package: 'map_picker_flutter', height: 50, width: 50)),
-        Positioned(
+                Image.asset(
+                  'assets/ic_location.png',
+                  package: 'map_picker_flutter',
+                  height: 50,
+                  width: 50,
+                ),
+          ),
+          Positioned(
             right: 0,
             left: 0,
             top: 0,
@@ -143,81 +153,94 @@ class MapPicker extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Flexible(
-                          child: Card(
-                              shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(100)),
-                              margin: EdgeInsets.all(20),
-                              child: Container(
-                                  margin: EdgeInsets.symmetric(horizontal: 15),
-                                  width: width * .4 - 40,
-                                  padding: EdgeInsets.only(
-                                      bottom: 5, right: 15, left: 15),
-                                  child: TextField(
-                                      controller: controller.searchControl,
-                                      decoration: InputDecoration(
-                                          labelText: theme.searchLabel,
-                                          hintText: theme.searchHint,
-                                          prefixIcon: IconButton(
-                                              icon: Icon(
-                                                  Icons.arrow_back_outlined),
-                                              onPressed: () =>
-                                                  Navigator.pop(context)),
-                                          suffixIcon: IconButton(
-                                              icon: Icon(Icons.search),
-                                              onPressed: () => controller
-                                                  .getAddressByAddress(
-                                                      controller.searchControl
-                                                          .text))),
-                                      onSubmitted:
-                                          controller.getAddressByAddress)))),
+                        child: Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          margin: EdgeInsets.all(20),
+                          child: Container(
+                            margin: EdgeInsets.symmetric(horizontal: 15),
+                            width: width * .4 - 40,
+                            padding:
+                                EdgeInsets.only(bottom: 5, right: 15, left: 15),
+                            child: TextField(
+                              controller: controller.searchControl,
+                              decoration: InputDecoration(
+                                labelText: theme.searchLabel,
+                                hintText: theme.searchHint,
+                                prefixIcon: IconButton(
+                                  icon: Icon(Icons.arrow_back_outlined),
+                                  onPressed: () => Navigator.pop(context),
+                                ),
+                                suffixIcon: IconButton(
+                                  icon: Icon(Icons.search),
+                                  onPressed: () =>
+                                      controller.getAddressByAddress(
+                                    controller.searchControl.text,
+                                  ),
+                                ),
+                              ),
+                              onSubmitted: controller.getAddressByAddress,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
-                  )),
-        Positioned(
+                  ),
+          ),
+          Positioned(
             bottom: 0,
             right: 0,
             left: 0,
             child: StreamBuilder<bool>(
-                stream: controller.outStreamProgress,
-                initialData: true,
-                builder: (c, s) => (s.data ?? true)
-                    ? (progressWidget ??
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                                margin: EdgeInsets.only(bottom: 15),
-                                child: CircularProgressIndicator())
-                          ],
-                        ))
-                    : StreamBuilder<MPAddress?>(
-                        stream: controller.outStreamAddress,
-                        builder: (c, ad) => (addressBuilder != null
-                            ? addressBuilder!(
-                                ad.data?.formattedAddress ??
-                                    theme.withoutAddress,
-                                dispose)
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Flexible(
-                                      child: Card(
-                                          shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(10)),
-                                          margin: EdgeInsets.all(15),
-                                          child: Container(
-                                              padding: EdgeInsets.symmetric(
-                                                  horizontal: 25, vertical: 10),
-                                              alignment: Alignment.center,
-                                              width: width * .4 - 40,
-                                              child: Text(
-                                                  ad.data?.formattedAddress ??
-                                                      theme.withoutAddress,
-                                                  textAlign:
-                                                      TextAlign.center))))
-                                ],
-                              )))))
-      ],
-    ));
+              stream: controller.outStreamProgress,
+              initialData: true,
+              builder: (c, s) => (s.data ?? true)
+                  ? (progressWidget ??
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                              margin: EdgeInsets.only(bottom: 15),
+                              child: CircularProgressIndicator())
+                        ],
+                      ))
+                  : StreamBuilder<MapPickerAddress?>(
+                      stream: controller.outStreamAddress,
+                      builder: (c, ad) => (addressBuilder != null
+                          ? addressBuilder!(
+                              ad.data?.formattedAddress ?? theme.noAddress,
+                              dispose,
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Flexible(
+                                  child: Card(
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    margin: EdgeInsets.all(15),
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 25, vertical: 10),
+                                      alignment: Alignment.center,
+                                      width: width * .4 - 40,
+                                      child: Text(
+                                        ad.data?.formattedAddress ??
+                                            theme.noAddress,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )),
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

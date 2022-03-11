@@ -16,19 +16,19 @@ class MainScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     MapPicker.init(
-        theme: MPickerTheme(
+        theme: MapPickerTheme(
 
             /// # Initial Location
             initialLocation: LatLng(-23.572143, -46.613275),
 
             /// # Text showed when address is not founded
-            errorAddressMissing: 'Error, address don\'t founded.',
+            errorAddressMissing: 'No address specified',
 
             /// # Text showed when gets error during find address
-            errorToFindAddress: 'Error to find this address, try again.',
+            errorAddressNotFound: 'Address not found',
 
             /// # Initial text when don`t has any address selected
-            withoutAddress: 'Without Address Picked',
+            noAddress: 'No address',
 
             /// # Here the texts showed in [TextField] case you don`t use a custom
             searchHint: 'Type here...',

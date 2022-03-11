@@ -18,7 +18,7 @@ class MapPickerController with _Base {
 
   final _progress = BehaviorSubject<bool>.seeded(false);
   final _address = BehaviorSubject<MapPickerAddress?>();
-  final MapController ctMap;
+  final MapController mapController;
   final MapPickerTheme theme;
   final String key;
 
@@ -33,13 +33,16 @@ class MapPickerController with _Base {
   String get currentAddress => _address.value?.formattedAddress ?? '-';
   MapPickerAddress? get popAddress => _hasError ? null : _address.value;
 
-  MapPickerController(
-      {required this.key, required this.theme, required this.ctMap});
+  MapPickerController({
+    required this.key,
+    required this.theme,
+    required this.mapController,
+  });
 
   /// Go To place with latLng
   goTo(LatLng? latLng) {
     if (latLng != null) {
-      ctMap.center = latLng;
+      mapController.center = latLng;
     }
   }
 
@@ -47,7 +50,7 @@ class MapPickerController with _Base {
   goToInitial() => goTo(theme.initialLocation);
 
   /// Zoom on double tap
-  onDoubleTap() => ctMap.zoom += 0.5;
+  onDoubleTap() => mapController.zoom += 0.5;
 
   /// On Star Change Scale
   onScaleStart(ScaleStartDetails details) {
@@ -61,14 +64,14 @@ class MapPickerController with _Base {
     _scaleStart = details.scale;
 
     if (scaleDiff > 0) {
-      ctMap.zoom += 0.02;
+      mapController.zoom += 0.02;
     } else if (scaleDiff < 0) {
-      ctMap.zoom -= 0.02;
+      mapController.zoom -= 0.02;
     } else {
       final now = details.focalPoint;
       final diff = now - (_dragStart ?? Offset(0, 0));
       _dragStart = now;
-      ctMap.drag(diff.dx, diff.dy);
+      mapController.drag(diff.dx, diff.dy);
     }
   }
 
@@ -79,45 +82,50 @@ class MapPickerController with _Base {
 
       if (sl > 0) {
         // to down
-        if (ctMap.zoom > 3) {
-          ctMap.zoom -= 0.5;
+        if (mapController.zoom > 3) {
+          mapController.zoom -= 0.5;
         }
       } else {
         // to up
-        if (ctMap.zoom <= 20.5) {
-          ctMap.zoom += 0.5;
+        if (mapController.zoom <= 20.5) {
+          mapController.zoom += 0.5;
         }
       }
     }
   }
 
-  String _replaceIt(
-          {required String text, required c.Map<String, String> remove}) =>
-      remove.keys.fold<String>(text,
-          (text, element) => text.replaceAll(element, remove[element] ?? ''));
+  String _replaceIt({
+    required String text,
+    required c.Map<String, String> remove,
+  }) =>
+      remove.keys.fold<String>(
+        text,
+        (text, element) => text.replaceAll(element, remove[element] ?? ''),
+      );
 
   String _getExtraArgs() =>
       (theme.lang != null ? '&language=${theme.lang}' : '') + '&key=$key';
 
   /// # Get address by LatLnt
   getAddressByLatLng() async {
-    final position = ctMap.center;
+    final position = mapController.center;
     _progress.sink.add(true);
 
     try {
-      final resp = await Dio().get(_replaceIt(
+      final resp = await Dio().get(
+        _replaceIt(
           text: _URL_LAT_LNG + _getExtraArgs(),
           remove: {
             '[LAT]': position.latitude.toString(),
             '[LON]': position.longitude.toString()
-          }));
-
-      _address.sink.add(
-        MapPickerAddress(
-          formattedAddress: _extractAddress(resp),
-          latLng: position,
+          },
         ),
       );
+
+      final addr = _extractAddressFromResponse(resp);
+      if (addr != null) {
+        _address.sink.add(addr);
+      }
     } catch (msg) {
       _address.sink.add(
         MapPickerAddress(
@@ -136,24 +144,127 @@ class MapPickerController with _Base {
     _progress.sink.add(true);
 
     try {
-      final resp = await Dio().get(_replaceIt(
+      final resp = await Dio().get(
+        _replaceIt(
           text: _URL_ADDRESS + _getExtraArgs(),
-          remove: {'[ADDRESS]': address.toString()}));
+          remove: {
+            '[ADDRESS]': address.toString(),
+          },
+        ),
+      );
 
-      goTo(_extractLatLng(resp));
-      _address.sink.add(MapPickerAddress(
-          formattedAddress: _extractAddress(resp),
-          latLng: _extractLatLng(resp)));
+      final addr = _extractAddressFromResponse(resp);
+      goTo(addr?.latLng);
+      if (addr != null) {
+        _address.sink.add(addr);
+      }
     } catch (msg) {
-      _address.sink
-          .add(MapPickerAddress(formattedAddress: theme.errorAddressNotFound));
+      _address.sink.add(
+        MapPickerAddress(
+          formattedAddress: theme.errorAddressNotFound,
+        ),
+      );
       _hasError = true;
     }
 
     _progress.sink.add(false);
   }
 
-  String _extractAddress(Response resp) {
+  MapPickerAddress? _extractAddressFromResponse(Response resp) {
+    if (resp.data == null ||
+        resp.data['status'] != 'OK' ||
+        resp.data['results'] == null ||
+        (resp.data['results'] as List).isEmpty) {
+      return null;
+    }
+
+    final result = (resp.data['results'] as List).first!;
+
+    final location = result['geometry']['location'];
+    final latLng = LatLng(location['lat'], location['lng']);
+    final formattedAddress = result['formatted_address']?.toString();
+    final placeId = result['place_id']?.toString();
+
+    MapPickerAddressComponent? country,
+        city,
+        postalCode,
+        administrativeAreaLevel1,
+        administrativeAreaLevel2,
+        subLocalityLevel1,
+        subLocalityLevel2;
+
+    if (result['address_components'] is List<dynamic> &&
+        result['address_components'].length != null &&
+        result['address_components'].length > 0) {
+      for (var i = 0; i < result['address_components'].length; i++) {
+        var tmp = result['address_components'][i];
+        var types = tmp['types'] as List<dynamic>?;
+        var shortName = tmp['short_name'];
+        var longName = tmp['long_name'];
+        if (types == null) {
+          continue;
+        }
+
+        if (types.contains('sublocality_level_1')) {
+          subLocalityLevel1 = MapPickerAddressComponent(
+            shortName: shortName,
+            name: longName,
+          );
+        }
+        if (types.contains('sublocality_level_2')) {
+          subLocalityLevel2 = MapPickerAddressComponent(
+            shortName: shortName,
+            name: longName,
+          );
+        }
+        if (types.contains('locality')) {
+          city = MapPickerAddressComponent(
+            shortName: shortName,
+            name: longName,
+          );
+        }
+        if (types.contains('administrative_area_level_2')) {
+          administrativeAreaLevel2 = MapPickerAddressComponent(
+            shortName: shortName,
+            name: longName,
+          );
+        }
+        if (types.contains('administrative_area_level_1')) {
+          administrativeAreaLevel1 = MapPickerAddressComponent(
+            shortName: shortName,
+            name: longName,
+          );
+        }
+        if (types.contains('country')) {
+          country = MapPickerAddressComponent(
+            shortName: shortName,
+            name: longName,
+          );
+        }
+        if (types.contains('postal_code')) {
+          postalCode = MapPickerAddressComponent(
+            shortName: shortName,
+            name: longName,
+          );
+        }
+      }
+    }
+
+    return MapPickerAddress(
+      formattedAddress: formattedAddress,
+      latLng: latLng,
+      country: country,
+      city: city,
+      administrativeAreaLevel1: administrativeAreaLevel1,
+      administrativeAreaLevel2: administrativeAreaLevel2,
+      subLocalityLevel1: subLocalityLevel1,
+      subLocalityLevel2: subLocalityLevel2,
+      postalCode: postalCode,
+      placeId: placeId,
+    );
+  }
+
+  /*String _extractAddress(Response resp) {
     final emptyAddress = theme.errorAddressMissing;
 
     try {
@@ -177,9 +288,9 @@ class MapPickerController with _Base {
       _hasError = true;
       return theme.errorAddressNotFound;
     }
-  }
+  }*/
 
-  LatLng? _extractLatLng(Response resp) {
+  /*LatLng? _extractLatLng(Response resp) {
     try {
       if (resp.data != null && resp.data['status'] == 'OK') {
         final address = resp.data['results'];
@@ -192,7 +303,7 @@ class MapPickerController with _Base {
     } catch (msg) {}
 
     return null;
-  }
+  }*/
 
   @override
   void dispose() {

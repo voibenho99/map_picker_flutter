@@ -80,7 +80,7 @@ class MapPicker extends StatelessWidget {
         controller: MapPickerController(
           theme: theme ?? _gTheme,
           key: _key,
-          ctMap: MapController(
+          mapController: MapController(
             location: theme?.initialLocation ?? _gTheme.initialLocation,
             zoom: theme?.zoom ?? _gTheme.zoom,
           ),
@@ -120,7 +120,7 @@ class MapPicker extends StatelessWidget {
                 onScaleStart: controller.onScaleStart,
                 onDoubleTap: controller.onDoubleTap,
                 child: Map(
-                  controller: controller.ctMap,
+                  controller: controller.mapController,
                   builder: (context, x, y, z) {
                     final url =
                         'https://mt1.google.com/vt/lyrs=m@129&x=$x&y=$y&z=$z';

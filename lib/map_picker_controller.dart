@@ -27,7 +27,7 @@ class MapPickerController with _Base {
   Stream<MapPickerAddress?> get outStreamAddress => _address.stream;
   Stream<bool> get outStreamProgress => _progress.stream;
   double _scaleStart = 1.0;
-  c.bool _hasError = true;
+  c.bool _hasError = false;
   Offset? _dragStart;
 
   String get currentAddress => _address.value?.formattedAddress ?? '-';

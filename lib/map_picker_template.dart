@@ -19,6 +19,7 @@ class MapPickerTemplate {
     String btnCancel = 'Cancel',
     String btnSave = 'Save',
     MapPickerMapType mapType = MapPickerMapType.roadmap,
+    double? zoomOnGoTo,
   }) async {
     final content = MapPicker(
       progressWidget: progressWidget,
@@ -27,6 +28,7 @@ class MapPickerTemplate {
       marker: marker,
       theme: theme,
       mapType: mapType,
+      zoomOnGoTo: zoomOnGoTo,
     );
 
     return await showDialog(

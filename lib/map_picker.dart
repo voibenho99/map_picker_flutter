@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:map_picker_flutter/map_picker_address.dart';
+import 'package:map_picker_flutter/map_picker_map_type.dart';
 import 'map_picker_controller.dart';
 import 'package:map/map.dart';
 import 'map_picker_theme.dart';
@@ -54,6 +55,7 @@ class MapPicker extends StatelessWidget {
   final Widget? progressWidget;
   final MapPickerTheme theme;
   final Widget? marker;
+  final MapPickerMapType mapType;
 
   factory MapPicker({
     /// Custom search Builder Widget, case it is null, will be used the global or default
@@ -70,6 +72,9 @@ class MapPicker extends StatelessWidget {
 
     /// Custom Marker, case it is null, will be used the global or default
     Widget? marker,
+
+    /// Map tile type, defaults to roadmap
+    MapPickerMapType mapType = MapPickerMapType.roadmap,
   }) =>
       MapPicker._internal(
         progressWidget:
@@ -86,6 +91,7 @@ class MapPicker extends StatelessWidget {
           ),
         ),
         theme: theme ?? _gTheme,
+        mapType: mapType,
       );
 
   MapPicker._internal({
@@ -95,6 +101,7 @@ class MapPicker extends StatelessWidget {
     this.progressWidget,
     required this.controller,
     required this.theme,
+    required this.mapType,
   });
 
   dispose() => controller.dispose();
@@ -123,7 +130,7 @@ class MapPicker extends StatelessWidget {
                   controller: controller.mapController,
                   builder: (context, x, y, z) {
                     final url =
-                        'https://mt1.google.com/vt/lyrs=m@129&x=$x&y=$y&z=$z';
+                        'https://mt1.google.com/vt/lyrs=${mapType.tileCode}@129&x=$x&y=$y&z=$z';
 
                     return CachedNetworkImage(
                         errorWidget: (c, w, s) => CircularProgressIndicator(),

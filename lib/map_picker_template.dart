@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:map_picker_flutter/map_picker_map_type.dart';
 
 export 'package:latlng/latlng.dart';
 import 'map_picker.dart';
@@ -17,6 +18,7 @@ class MapPickerTemplate {
     required BuildContext context,
     String btnCancel = 'Cancel',
     String btnSave = 'Save',
+    MapPickerMapType mapType = MapPickerMapType.roadmap,
   }) async {
     final content = MapPicker(
       progressWidget: progressWidget,
@@ -24,6 +26,7 @@ class MapPickerTemplate {
       searchBuilder: searchBuilder,
       marker: marker,
       theme: theme,
+      mapType: mapType,
     );
 
     return await showDialog(

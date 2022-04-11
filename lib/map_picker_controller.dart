@@ -43,6 +43,7 @@ class MapPickerController with _Base {
   goTo(LatLng? latLng) {
     if (latLng != null) {
       mapController.center = latLng;
+      mapController.zoom = 15;
     }
   }
 

@@ -21,6 +21,7 @@ class MapPickerController with _Base {
   final MapController mapController;
   final MapPickerTheme theme;
   final String key;
+  final double? zoomOnGoTo;
 
   final searchControl = TextEditingController();
 
@@ -37,13 +38,16 @@ class MapPickerController with _Base {
     required this.key,
     required this.theme,
     required this.mapController,
+    this.zoomOnGoTo,
   });
 
   /// Go To place with latLng
   goTo(LatLng? latLng) {
     if (latLng != null) {
       mapController.center = latLng;
-      mapController.zoom = 15;
+      if (zoomOnGoTo != null) {
+        mapController.zoom = zoomOnGoTo!;
+      }
     }
   }
 

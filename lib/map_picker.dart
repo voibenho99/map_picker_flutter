@@ -75,6 +75,9 @@ class MapPicker extends StatelessWidget {
 
     /// Map tile type, defaults to roadmap
     MapPickerMapType mapType = MapPickerMapType.roadmap,
+
+    /// Zoom level to apply when focusing on a specific location, for example after an address has been selected
+    double? zoomOnGoTo,
   }) =>
       MapPicker._internal(
         progressWidget:
@@ -89,6 +92,7 @@ class MapPicker extends StatelessWidget {
             location: theme?.initialLocation ?? _gTheme.initialLocation,
             zoom: theme?.zoom ?? _gTheme.zoom,
           ),
+          zoomOnGoTo: zoomOnGoTo,
         ),
         theme: theme ?? _gTheme,
         mapType: mapType,

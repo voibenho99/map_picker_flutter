@@ -18,10 +18,12 @@ packages:
   cached_network_image:
     dependency: "direct main"
     description:
-      name: cached_network_image
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.2.0"
+      path: cached_network_image
+      ref: master
+      resolved-ref: "6c289f374a5e802f862e0a566f31246e734022d8"
+      url: "https://github.com/hymrdjnh1999/flutter_cached_network_image"
+    source: git
+    version: "3.1.0"
   cached_network_image_platform_interface:
     dependency: transitive
     description:
